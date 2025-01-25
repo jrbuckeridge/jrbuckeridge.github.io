@@ -4,9 +4,8 @@ import {HitBox} from './hitbox.js';
 const MAX_LIFE = 100;
 
 export default class Hero {
-  constructor(gameWidth, gameHeight) {
-    this.gameWidth = gameWidth;
-    this.gameHeight = gameHeight;
+  constructor(game) {
+    this.game = game;
     this.states = {};
 
     this.states['idle'] = new IdleState(this);
@@ -18,9 +17,9 @@ export default class Hero {
     this.states['hurt'] = new HurtState(this);
 
     this.state = this.states['idle'];
-    this.initialXPosition = this.gameWidth * 0.25 - this.state.size.width/2;
+    this.initialXPosition = this.game.size.width * 0.25 - this.state.size.width/2;
     this.x = this.initialXPosition;
-    this.y = this.gameHeight - this.state.size.height;
+    this.y = this.game.size.height - this.state.size.height * this.game.ratio.yScale;
 
     // Allows to move the hero
     this.speedX = 0;
@@ -28,6 +27,14 @@ export default class Hero {
 
     this.life = MAX_LIFE;
     this.gameOver = false;
+  }
+
+  resize(size) {
+    for (let key in this.states) {
+      this.states[key].resize(size);
+    }
+    // Always ground the hero after a resize. The trade-off is that jumps can glitch.
+    this.groundHero();
   }
 
   draw(context, deltaTime) {
@@ -48,10 +55,10 @@ export default class Hero {
     this.x += this.speedX;
     this.y += this.speedY;
     // Max Y position
-    if (this.y < this.gameHeight * 0.05) {
-      this.y = this.gameHeight * 0.05;
-    } else if (this.y > this.gameHeight - this.state.size.height) {
-      this.y = this.gameHeight - this.state.size.height;
+    if (this.y < this.game.size.height * 0.05) {
+      this.y = this.game.size.height * 0.05;
+    } else if (this.y > this.game.size.height - this.state.size.scaledHeight) {
+      this.y = this.game.size.height - this.state.size.scaledHeight;
     }
   }
 
@@ -103,11 +110,19 @@ export default class Hero {
   setState(stateId) {
     this.state = this.states[stateId];
     this.state.reset();
-    this.y = this.gameHeight - this.state.size.height;
+    this.groundHero();
+  }
+
+  /**
+   * Sets the hero vertical position to ground level.
+   */
+  groundHero() {
+    this.y = this.game.size.height - this.state.size.scaledHeight;
   }
 
   getHitBox() {
-    let stateHitBox = this.state.getHitBox();
+    let stateHitBox = this.state.getHitBox().scaled(this.game.ratio.yScale);
+
     return new HitBox(this.x + stateHitBox.x, this.y + this.speedY + stateHitBox.y,
       stateHitBox.width, stateHitBox.height);
   }
@@ -119,6 +134,9 @@ export default class Hero {
     }
   }
 
+  /**
+   * @returns {boolean} Returns TRUE if the hero is defeated.
+   */
   isDefeated() {
     return this.life <= 0;
   }

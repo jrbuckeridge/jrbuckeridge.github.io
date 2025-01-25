@@ -11,6 +11,10 @@ export class ParallaxBackground {
     this.aspectRatio = this.width / this.height;
   }
 
+  resize(size, ratio) {
+    this.gameSize = size;
+  }
+
   computedWidth() {
     return this.gameSize.height * this.aspectRatio;
   }

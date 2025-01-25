@@ -1,3 +1,6 @@
+/**
+ * A rectangular area to determine collisions.
+ */
 export class HitBox {
   constructor(x, y, width, height) {
     this.x = x;
@@ -5,6 +8,17 @@ export class HitBox {
     this.width = width;
     this.height = height;
   }
+
+  /**
+   * Returns a scaled copy of this hitbox.
+   * @param scale The scale factor.
+   * @returns {HitBox} A scaled copy of the original element.
+   */
+  scaled(scale) {
+    return new HitBox(this.x * scale, this.y * scale,
+      this.width * scale, this.height * scale);
+  }
+
 
   collidesWith(hitBox) {
     return this.x < hitBox.x + hitBox.width &&

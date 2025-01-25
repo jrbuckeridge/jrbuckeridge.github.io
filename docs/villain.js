@@ -4,6 +4,11 @@ export default class BatVillain {
   constructor(gameSize, batId) {
     this.gameWidth = gameSize.width;
     this.gameHeight = gameSize.height;
+
+    this.oscillatingFactor = 1 + Math.random();
+    this.oscillatingScalePercent = Math.random() * 0.05;
+    this.yOffsetPercent = Math.random() < 0.5 ? 75 : 50;
+
     this.states = {};
     this.width = 1261;
     this.height = 747;
@@ -13,8 +18,8 @@ export default class BatVillain {
     this.states['defeated'] = new DefeatedState(this, 'img/villains/'+ batId +'/skeleton-defeated_', 20);
     this.state = this.states['flying'];
 
-    this.x = this.gameWidth * 1.1; // starts offscreen
-    this.y = this.gameHeight / 2; // half screen
+    this.x = this.gameWidth * 1.1; // starts off screen
+    this.y = this.gameHeight * 0.65; // bottom half of screen
 
     // Set to true when this villain shouldn't render anymore
     this.disabled = false;
@@ -26,6 +31,11 @@ export default class BatVillain {
   setPosition(x, y) {
     this.x = x;
     this.y = y;
+  }
+
+  resize(size, ratio) {
+    this.gameWidth = size.width;
+    this.gameHeight = size.height;
   }
 
   draw(context, deltaTime) {
@@ -50,7 +60,6 @@ export default class BatVillain {
   }
 
   tryDefeated() {
-    console.log('Villain Defeated...');
     this.state = this.states['defeated'];
     this.state.reset();
     this.defeated = true;
@@ -89,14 +98,14 @@ class State {
 class FlyingState extends State {
   constructor(villain, imagePrefix, numStates) {
     super(villain, imagePrefix, numStates);
-    this.oscillatingFactor = 1 + Math.random();
-    this.oscillatingScale = 4 + (Math.random() * 3);
   }
 
   update(deltaTime) {
     super.update(deltaTime);
     this.villain.x -= (deltaTime * 0.15);
-    this.villain.y += (this.oscillatingScale * Math.sin(this.oscillatingFactor * this.timeInState / 100));
+    const scale = this.villain.oscillatingScalePercent * this.villain.gameHeight / 100;
+    this.villain.y = scale * Math.sin(this.villain.oscillatingFactor * this.timeInState / 100)
+      + (this.villain.yOffsetPercent * this.villain.gameHeight / 100);
   }
 }
 

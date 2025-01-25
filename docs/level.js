@@ -1,4 +1,3 @@
-import {Size} from "./hitbox.js";
 import {ParallaxBackground} from "./background.js";
 import BatVillain from "./villain.js";
 import {Coin, Health} from "./power-up.js";
@@ -11,11 +10,15 @@ class Level {
     this.hero = hero;
     this.goals = goals;
     this.backgrounds = [];
+    this.villains = [];
+    this.coins = [];
+    this.powerUps = [];
+
     /**
      * The computed target goals when the level starts taking into account the initial player state.
      */
     this.targetGoal = goals;
-    this.resize();
+    this.resize(this.game.size, this.game.ratio);
   }
 
   isLevelCompleted () {
@@ -26,8 +29,10 @@ class Level {
     this.targetGoal = this.goals.add(score);
   }
 
-  resize() {
-    this.context.font = "32px Bungee";
+  resize(size, ratio) {
+    const scaledFontSize = Math.floor(20 * ratio.xScale);
+    this.context.font = `${scaledFontSize}px Bungee`;
+    this.hero.resize(size, ratio);
   }
 }
 
@@ -46,6 +51,7 @@ export class LevelDetails {
 export class Level1 extends Level {
   constructor(game, levelDetails, hero, goals) {
     super(game, levelDetails, hero, goals);
+
     this.renderGoals = true;
     this.renderGoalsListener = () => {
       this.renderGoals = false;
@@ -54,29 +60,21 @@ export class Level1 extends Level {
     window.addEventListener('keypress', this.renderGoalsListener);
 
     // Solid background
-    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-1.png', 0,
-      new Size(game.size.width, game.size.height)));
+    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-1.png', 0, game.size));
     // Clouds
-    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-2.png', -0.05,
-      new Size(game.size.width, game.size.height)));
+    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-2.png', -0.05, game.size));
     // Big mountains
-    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-3.png', -0.10,
-      new Size(game.size.width, game.size.height)));
+    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-3.png', -0.10, game.size));
     // Small mountains
-    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-4.png', -0.15,
-      new Size(game.size.width, game.size.height)));
+    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-4.png', -0.15, game.size));
     // Rocks
-    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-5.png', -0.25,
-      new Size(game.size.width, game.size.height)));
+    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-5.png', -0.25, game.size));
     // Bushes
-    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-6.png', -0.25,
-      new Size(game.size.width, game.size.height)));
+    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-6.png', -0.25, game.size));
     // Terrain
-    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-7.png', -0.5,
-      new Size(game.size.width, game.size.height)));
+    this.backgrounds.push(new ParallaxBackground('img/background/nature-landscape/layer-7.png', -0.5, game.size));
 
     const numVillains = 50;
-    this.villains = [];
     const batIds = ['bat01', 'bat02', 'bat03'];
     for (let i = 1; i <= numVillains; i++) {
       let villain = new BatVillain(game.size,
@@ -88,23 +86,37 @@ export class Level1 extends Level {
     }
 
     const numCoins = 100;
-    this.coins = [];
     for (let i = 1; i <= numCoins; i++) {
       let coin = new Coin(this.game.size);
       coin.setPosition(
-        this.game.size.width * 1.1 + (this.game.size.width * 0.25 * i) + (Math.random() - 0.5) * 50,
-        this.game.size.height / 2 + (Math.random() - 0.5) * 200);
+        this.game.size.width * 1.1 + (this.game.size.width * 0.25 * i) + (Math.random() - 0.5) * 50, coin.y);
       this.coins.push(coin);
     }
 
-    const numHealths = Math.floor(numVillains / 15);
-    this.healths = [];
-    for (let i = 1; i <= numHealths; i++) {
-      let health = new Health(this.game.size);
-      health.setPosition(
+    const numPowerUps = Math.floor(numVillains / 15);
+    for (let i = 1; i <= numPowerUps; i++) {
+      let powerUp = new Health(this.game.size);
+      powerUp.setPosition(
         this.villains[i * 15 - 1].x + (Math.random() - 0.5) * 50,
         this.game.size.height / 2);
-      this.healths.push(health);
+      this.powerUps.push(powerUp);
+    }
+  }
+
+  resize(size, ratio) {
+    super.resize(size, ratio);
+    for (let b of this.backgrounds) {
+      b.resize(size, ratio);
+    }
+    for (let v of this.villains) {
+      v.resize(size, ratio);
+      v.setPosition(v.x, this.game.size.height * 0.5);
+    }
+    for (let c of this.coins) {
+      c.resize(size, ratio);
+    }
+    for (let h of this.powerUps) {
+      h.resize(size, ratio);
     }
   }
 
@@ -122,7 +134,7 @@ export class Level1 extends Level {
     if (this.goals.defeatedVillains > 0) {
       this.context.fillText(`Defeat ${this.goals.defeatedVillains} villains`, this.game.size.width * 0.5, this.game.size.height * 0.50);
       const villain = new BatVillain(this.game.size, 'bat01');
-      villain.setPosition(this.game.size.width * 0.285, this.game.size.height * 0.49 - 36);
+      villain.setPosition(this.game.size.width * 0.285, this.game.size.height * 0.5);
       villain.draw(context, 0);
     }
     this.context.restore();
@@ -151,16 +163,16 @@ export class Level1 extends Level {
     for (let coin of this.coins) {
       coin.draw(this.context, deltaTime);
     }
-    // Draw health power-ups
-    for (let health of this.healths) {
-      health.draw(this.context, deltaTime);
+    // Draw power-ups
+    for (let powerUp of this.powerUps) {
+      powerUp.draw(this.context, deltaTime);
     }
 
     // Draw hero
     this.hero.draw(this.context, deltaTime);
     // // Debug with hit boxes
-    // const debugHitBox = hero.getHitBox();
-    // context.strokeRect(debugHitBox.x, debugHitBox.y, debugHitBox.width, debugHitBox.height);
+    const debugHitBox = this.hero.getHitBox();
+    context.strokeRect(debugHitBox.x, debugHitBox.y, debugHitBox.width, debugHitBox.height);
   }
 
   update(deltaTime) {
@@ -186,9 +198,9 @@ export class Level1 extends Level {
     for (let coin of this.coins) {
       coin.update(deltaTime);
     }
-    // Draw health power-ups
-    for (let health of this.healths) {
-      health.update(deltaTime);
+    // Draw powerUp power-ups
+    for (let powerUp of this.powerUps) {
+      powerUp.update(deltaTime);
     }
     // Update hero
     this.hero.update(deltaTime);
@@ -246,9 +258,9 @@ export class Level1 extends Level {
         }
       }
 
-      // Check for collisions between hero and health power ups
-      for (let health of this.healths) {
-        if (health.disabled) {
+      // Check for collisions between hero and power ups
+      for (let powerUp of this.powerUps) {
+        if (powerUp.disabled) {
           continue;
         }
 
@@ -259,12 +271,12 @@ export class Level1 extends Level {
         }
 
         const hitBox = this.hero.getHitBox();
-        const targetHitBox = health.getHitBox();
+        const targetHitBox = powerUp.getHitBox();
 
         if (hitBox.collidesWith(targetHitBox)) {
-          health.tryCapture();
-          this.game.score.addPoints(health.scoreValue);
-          this.hero.increaseLife(health.lifeValue);
+          powerUp.tryCapture();
+          this.game.score.addPoints(powerUp.scoreValue);
+          this.hero.increaseLife(powerUp.lifeValue);
         }
       }
     }

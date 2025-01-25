@@ -4,6 +4,7 @@ import {Level1, LevelDetails} from "./level.js";
 import {Size} from "./hitbox.js";
 import {Goal} from "./goal.js";
 import {Score} from "./score.js";
+import {Ratio} from "./ratio.js";
 
 window.onload = function () {
   new Game().start();
@@ -13,15 +14,29 @@ class Game {
   constructor() {
     this.canvas = document.getElementById('canvas');
     this.context = this.canvas.getContext('2d');
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
-    this.canvas.fontFamily = 'Bungee';
-    this.size = new Size(this.canvas.width, this.canvas.height);
+    this.resize(new Size(window.innerWidth, window.innerHeight));
+
     this.soundOn = false;
     this.currentLevel = undefined;
     this.score = new Score();
     this.allGoals = [];
     this.currentGoalIndex = 0;
+
+    window.addEventListener('resize', (e) => {
+      this.resize(new Size(e.currentTarget.innerWidth, e.currentTarget.innerHeight));
+    });
+  }
+
+  resize(size) {
+    this.size = size;
+    this.ratio = new Ratio(size);
+    this.canvas.width = size.width;
+    this.canvas.height = size.height;
+    this.canvas.fontFamily = 'Bungee';
+
+    if (this.currentLevel) {
+      this.currentLevel.resize(this.size, this.ratio);
+    }
   }
 
   start() {
@@ -39,7 +54,7 @@ class Game {
       }
     });
 
-    this.hero = new Player(this.canvas.width, this.canvas.height);
+    this.hero = new Player(this);
     const inputHandler = new InputHandler(this.hero);
     inputHandler.registerListeners();
 

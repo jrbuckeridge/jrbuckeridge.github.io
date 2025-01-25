@@ -11,7 +11,8 @@ class PowerUp {
     this.state = this.states['moving'];
 
     this.x = this.gameWidth * 1.1; // starts offscreen
-    this.y = this.gameHeight / 2; // half screen
+    this.yOffsetPercent = 55 + (Math.random() - 0.5) * 30;
+    this.y = this.gameHeight * this.yOffsetPercent / 100;
 
     // Set to true when this power-up shouldn't render anymore
     this.disabled = false;
@@ -22,6 +23,12 @@ class PowerUp {
   setPosition(x, y) {
     this.x = x;
     this.y = y;
+  }
+
+  resize(size, ratio) {
+    this.gameWidth = size.width;
+    this.gameHeight = size.height;
+    this.y = this.gameHeight * this.yOffsetPercent / 100;
   }
 
   draw(context, deltaTime) {
